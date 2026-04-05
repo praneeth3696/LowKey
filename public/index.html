@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShadowPress · Steganography Lab</title>
+  <meta name="description" content="All-in-one steganography toolkit — hide and reveal secrets in images, audio, and text.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <a class="logo" href="#">
+      <div class="logo-mark"></div>
+      <span class="logo-text">SHADOW<span>PRESS</span></span>
+      <span class="logo-version">v1.0</span>
+    </a>
+    <div class="header-center">
+      <span class="header-tagline">// steganography lab</span>
+    </div>
+    <div class="header-right">
+      <span class="status-dot" id="api-status">LOCAL</span>
+      <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">
+        <span id="theme-icon">☀</span> <span id="theme-label">LIGHT</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Nav -->
+  <nav>
+    <button class="nav-tab active" data-tab="img-lsb" onclick="switchTab(this,'img-lsb')">
+      <span class="icon">◈</span> Image LSB
+    </button>
+    <button class="nav-tab" data-tab="audio-lsb" onclick="switchTab(this,'audio-lsb')">
+      <span class="icon">◉</span> Audio LSB
+    </button>
+    <button class="nav-tab" data-tab="text-stego" onclick="switchTab(this,'text-stego')">
+      <span class="icon">◫</span> Text Stego
+    </button>
+    <button class="nav-tab" data-tab="meta" onclick="switchTab(this,'meta')">
+      <span class="icon">◧</span> Metadata
+    </button>
+    <button class="nav-tab" data-tab="analysis" onclick="switchTab(this,'analysis')">
+      <span class="icon">◎</span> Analysis
+    </button>
+    <button class="nav-tab" data-tab="about" onclick="switchTab(this,'about')">
+      <span class="icon">◌</span> The Craft
+    </button>
+  </nav>
+
+  <!-- Main -->
+  <main>
+
+    <!-- ─── Image LSB ─────────────────────────── -->
+    <div class="panel active" id="panel-img-lsb">
+      <div class="panel-header">
+        <div class="panel-title">Image LSB Steganography</div>
+        <div class="panel-sub">Manipulate the least significant bit of each RGB pixel channel</div>
+      </div>
+      <div class="grid-2">
+
+        <div class="card">
+          <div class="card-title">encode into image</div>
+          <div class="dropzone-wrap">
+            <div class="dropzone" id="img-enc-zone">
+              <input type="file" accept="image/*" id="img-enc-file" onchange="handleImgEnc(this)">
+              <div class="dropzone-icon">⬡</div>
+              <div class="dropzone-text">Drop image or <strong>click to browse</strong><br>PNG · JPG · BMP · WebP</div>
+            </div>
+            <button class="clear-btn" id="img-enc-clear" onclick="clearDropzone('img-enc-zone','img-enc-file','img-enc-clear', resetImgEncPreview)" title="Clear file">✕ clear</button>
+          </div>
+          <div class="img-preview" id="img-enc-preview">
+            <span class="img-preview-empty">no image loaded</span>
+          </div>
+          <label>secret message</label>
+          <textarea id="img-secret" rows="3" placeholder="your hidden payload..."></textarea>
+          <label>passkey (optional)</label>
+          <input type="password" id="img-key" placeholder="XOR encryption key">
+          <button class="btn" onclick="encodeImage()"><span class="btn-text">▶ encode &amp; download</span></button>
+          <a class="dl-btn" id="img-dl" download="stego_image.png">⇓ download stego image</a>
+        </div>
+
+        <div class="card">
+          <div class="card-title">decode from image</div>
+          <div class="dropzone-wrap">
+            <div class="dropzone" id="img-dec-zone">
+              <input type="file" accept="image/*" id="img-dec-file" onchange="setDropzone(this,'img-dec-zone')">
+              <div class="dropzone-icon">⬡</div>
+              <div class="dropzone-text">Drop stego image or <strong>click to browse</strong></div>
+            </div>
+            <button class="clear-btn" id="img-dec-clear" onclick="clearDropzone('img-dec-zone','img-dec-file','img-dec-clear')" title="Clear file">✕ clear</button>
+          </div>
+          <label>passkey (if used)</label>
+          <input type="password" id="img-dec-key" placeholder="leave blank if none">
+          <button class="btn" onclick="decodeImage()"><span class="btn-text">▶ extract secret</span></button>
+          <div class="output" id="img-dec-out">load a stego image to extract...</div>
+          <hr class="divider">
+          <div class="card-title">image capacity</div>
+          <div class="stats" id="img-stats">
+            <div class="stat"><div class="stat-label">dimensions</div><div class="stat-val" id="s-dim">—</div></div>
+            <div class="stat"><div class="stat-label">capacity</div><div class="stat-val green" id="s-cap">—</div></div>
+            <div class="stat"><div class="stat-label">usage</div><div class="stat-val" id="s-use">—</div></div>
+            <div class="stat"><div class="stat-label">payload</div><div class="stat-val" id="s-pay">—</div></div>
+          </div>
+          <div class="progress-wrap" id="img-progress-wrap" style="display:none">
+            <div class="progress-label"><span>bit usage</span><span id="s-pct">0%</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="img-progress" style="width:0%"></div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── Audio LSB ─────────────────────────── -->
+    <div class="panel" id="panel-audio-lsb">
+      <div class="panel-header">
+        <div class="panel-title">Audio LSB Steganography</div>
+        <div class="panel-sub">Hide messages in the least significant bit of 16-bit WAV samples</div>
+      </div>
+      <div class="grid-2">
+
+        <div class="card">
+          <div class="card-title">encode into audio</div>
+          <div class="dropzone-wrap">
+            <div class="dropzone" id="aud-enc-zone">
+              <input type="file" accept=".wav,audio/wav" id="aud-enc-file" onchange="setDropzone(this,'aud-enc-zone')">
+              <div class="dropzone-icon">⬡</div>
+              <div class="dropzone-text">Drop WAV file or <strong>click to browse</strong><br>16-bit WAV only</div>
+            </div>
+            <button class="clear-btn" id="aud-enc-clear" onclick="clearDropzone('aud-enc-zone','aud-enc-file','aud-enc-clear')" title="Clear file">✕ clear</button>
+          </div>
+          <label>secret message</label>
+          <textarea id="aud-secret" rows="3" placeholder="your hidden payload..."></textarea>
+          <button class="btn" onclick="encodeAudio()"><span class="btn-text">▶ encode &amp; download</span></button>
+          <a class="dl-btn" id="aud-dl" download="stego_audio.wav">⇓ download stego WAV</a>
+        </div>
+
+        <div class="card">
+          <div class="card-title">decode from audio</div>
+          <div class="dropzone-wrap">
+            <div class="dropzone" id="aud-dec-zone">
+              <input type="file" accept=".wav,audio/wav" id="aud-dec-file" onchange="setDropzone(this,'aud-dec-zone')">
+              <div class="dropzone-icon">⬡</div>
+              <div class="dropzone-text">Drop stego WAV or <strong>click to browse</strong></div>
+            </div>
+            <button class="clear-btn" id="aud-dec-clear" onclick="clearDropzone('aud-dec-zone','aud-dec-file','aud-dec-clear')" title="Clear file">✕ clear</button>
+          </div>
+          <button class="btn" onclick="decodeAudio()"><span class="btn-text">▶ extract secret</span></button>
+          <div class="output" id="aud-dec-out">load a stego WAV to extract...</div>
+          <hr class="divider">
+          <div class="card-title">how audio LSB works</div>
+          <div class="info-text">
+            each 16-bit audio sample's least significant bit is replaced with one bit of your message.
+            the amplitude changes by ±1 out of 65535 — completely inaudible.
+            a 44100 Hz stereo 10s file = ~880KB = ~110KB capacity.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── Text Stego ────────────────────────── -->
+    <div class="panel" id="panel-text-stego">
+      <div class="panel-header">
+        <div class="panel-title">Zero-Width Text Steganography</div>
+        <div class="panel-sub">Encode secrets using invisible Unicode characters U+200B / U+200C</div>
+      </div>
+      <div class="grid-2">
+
+        <div class="card">
+          <div class="card-title">encode into text</div>
+          <div class="badge badge-green mb-1">zero-width unicode</div>
+          <label>cover text (visible to everyone)</label>
+          <textarea id="zt-cover" rows="4" placeholder="innocent looking message...">The team meeting is confirmed for Monday at 3pm. All attendees please review the agenda beforehand.</textarea>
+          <label>secret payload</label>
+          <textarea id="zt-secret" rows="3" placeholder="your actual hidden message..."></textarea>
+          <button class="btn" onclick="encodeZW()"><span class="btn-text">▶ inject &amp; copy</span></button>
+          <div class="output" id="zt-out" style="cursor:pointer" onclick="copyZW()" title="click to copy">output appears here...</div>
+          <div class="hint-text">click output to copy to clipboard</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">decode from text</div>
+          <label>paste text with hidden message</label>
+          <textarea id="zt-paste" rows="6" placeholder="paste the suspicious text here..."></textarea>
+          <button class="btn" onclick="decodeZW()"><span class="btn-text">▶ extract payload</span></button>
+          <div class="output" id="zt-dec-out">paste text above to decode...</div>
+          <hr class="divider">
+          <div class="card-title">character map</div>
+          <div class="char-map">
+            <span>U+200B · ZWSP → bit 0</span>
+            <span>U+200C · ZWNJ → bit 1</span>
+            <span>U+FEFF · BOM → delimiter</span>
+            <span>8-bit ASCII per char</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── Metadata ──────────────────────────── -->
+    <div class="panel" id="panel-meta">
+      <div class="panel-header">
+        <div class="panel-title">Metadata Injection</div>
+        <div class="panel-sub">Hide data in PNG tEXt chunks and EXIF metadata fields</div>
+      </div>
+      <div class="grid-2">
+
+        <div class="card">
+          <div class="card-title">inject metadata</div>
+          <div class="badge badge-amber mb-1">PNG tEXt chunk</div>
+          <div class="dropzone-wrap">
+            <div class="dropzone" id="meta-inj-zone">
+              <input type="file" accept="image/*" id="meta-inj-file" onchange="setDropzone(this,'meta-inj-zone')">
+              <div class="dropzone-icon">⬡</div>
+              <div class="dropzone-text">Drop image or <strong>click to browse</strong></div>
+            </div>
+            <button class="clear-btn" id="meta-inj-clear" onclick="clearDropzone('meta-inj-zone','meta-inj-file','meta-inj-clear')" title="Clear file">✕ clear</button>
+          </div>
+          <label>field name</label>
+          <div class="field-row">
+            <select id="meta-field-select" onchange="syncMetaField(this)">
+              <option value="Comment">Comment</option>
+              <option value="Author">Author</option>
+              <option value="Title">Title</option>
+              <option value="Description">Description</option>
+              <option value="Copyright">Copyright</option>
+              <option value="Software">Software</option>
+              <option value="Source">Source</option>
+              <option value="Warning">Warning</option>
+              <option value="Disclaimer">Disclaimer</option>
+              <option value="custom">✎ custom field...</option>
+            </select>
+            <input type="text" id="meta-field" value="Comment" placeholder="or type a custom field name" style="display:none; margin-bottom:0;">
+          </div>
+          <label>payload</label>
+          <textarea id="meta-secret" rows="3" placeholder="data to hide in metadata..."></textarea>
+          <button class="btn" onclick="injectMeta()"><span class="btn-text">▶ inject &amp; download</span></button>
+          <a class="dl-btn" id="meta-dl" download="meta_stego.png">⇓ download injected PNG</a>
+        </div>
+
+        <div class="card">
+          <div class="card-title">read &amp; extract metadata</div>
+          <div class="dropzone-wrap">
+            <div class="dropzone" id="meta-read-zone">
+              <input type="file" accept="image/*" id="meta-read-file" onchange="setDropzone(this,'meta-read-zone')">
+              <div class="dropzone-icon">⬡</div>
+              <div class="dropzone-text">Drop any image to inspect</div>
+            </div>
+            <button class="clear-btn" id="meta-read-clear" onclick="clearDropzone('meta-read-zone','meta-read-file','meta-read-clear')" title="Clear file">✕ clear</button>
+          </div>
+          <div class="flex-row mt-1">
+            <button class="btn btn-ghost btn-sm" onclick="readMeta()" style="flex:1"><span class="btn-text">read EXIF</span></button>
+            <button class="btn btn-sm" onclick="extractMeta()" style="flex:1"><span class="btn-text">extract tEXt</span></button>
+          </div>
+          <div class="output" id="meta-out">load an image to inspect...</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── Analysis ──────────────────────────── -->
+    <div class="panel" id="panel-analysis">
+      <div class="panel-header">
+        <div class="panel-title">Steganalysis</div>
+        <div class="panel-sub">Statistical detection of hidden data using Chi-Square analysis and LSB visualization</div>
+      </div>
+      <div class="grid-2">
+
+        <div class="card">
+          <div class="card-title">chi-square steganalysis</div>
+          <div class="dropzone-wrap">
+            <div class="dropzone" id="chi-zone">
+              <input type="file" accept="image/*" id="chi-file" onchange="setDropzone(this,'chi-zone')">
+              <div class="dropzone-icon">⬡</div>
+              <div class="dropzone-text">Drop image to analyze<br><strong>detects LSB steganography</strong></div>
+            </div>
+            <button class="clear-btn" id="chi-clear" onclick="clearDropzone('chi-zone','chi-file','chi-clear', resetChiResult)" title="Clear file">✕ clear</button>
+          </div>
+          <button class="btn" onclick="runChiSquare()"><span class="btn-text">▶ run steganalysis</span></button>
+          <div class="chi-result" id="chi-result" style="display:none">
+            <div class="chi-verdict" id="chi-verdict"></div>
+            <div class="chi-grid" id="chi-grid"></div>
+          </div>
+          <div class="analysis-legend">
+            <div class="legend-item"><span class="legend-dot green"></span> p &gt; 0.10 → CLEAN (natural image)</div>
+            <div class="legend-item"><span class="legend-dot amber"></span> 0.01 &lt; p ≤ 0.10 → SUSPICIOUS</div>
+            <div class="legend-item"><span class="legend-dot red"></span> p ≤ 0.01 → STEGO DETECTED</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">LSB plane visualizer</div>
+          <div class="dropzone-wrap">
+            <div class="dropzone" id="vis-zone">
+              <input type="file" accept="image/*" id="vis-file" onchange="visualizeLSBClient(this)">
+              <div class="dropzone-icon">⬡</div>
+              <div class="dropzone-text">Drop image to visualize its <strong>LSB noise plane</strong></div>
+            </div>
+            <button class="clear-btn" id="vis-clear" onclick="clearDropzone('vis-zone','vis-file','vis-clear', resetVisPreview)" title="Clear file">✕ clear</button>
+          </div>
+          <div class="img-preview" id="vis-preview">
+            <span class="img-preview-empty">load an image</span>
+          </div>
+          <div class="info-text">
+            clean image → random noise &nbsp;·&nbsp; encoded image → structured patterns.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── About ─────────────────────────────── -->
+    <div class="panel" id="panel-about">
+      <div class="panel-header">
+        <div class="panel-title">The Craft of Steganography</div>
+        <div class="panel-sub">The art of hiding messages in plain sight — since ancient times</div>
+      </div>
+      <div class="grid-3 mb-2">
+        <div class="card">
+          <div class="about-num">01</div>
+          <div class="about-h">Image LSB</div>
+          <div class="about-p">modify the least significant bit of each RGB pixel channel. change is ≤1/255 — invisible to the eye. a 1080×720 image holds ~97KB.</div>
+        </div>
+        <div class="card">
+          <div class="about-num">02</div>
+          <div class="about-h">Audio LSB</div>
+          <div class="about-p">replace LSB of 16-bit WAV samples. amplitude changes by ±1 out of 65535. inaudible. works on any uncompressed WAV.</div>
+        </div>
+        <div class="card">
+          <div class="about-num">03</div>
+          <div class="about-h">Zero-Width Text</div>
+          <div class="about-p">encode binary with U+200B/U+200C invisible Unicode characters injected between normal glyphs. invisible to readers, readable in hex.</div>
+        </div>
+        <div class="card">
+          <div class="about-num">04</div>
+          <div class="about-h">Metadata Injection</div>
+          <div class="about-p">hide data in PNG tEXt chunks, EXIF comment fields, or IPTC records. the image looks identical. data survives most viewers.</div>
+        </div>
+        <div class="card">
+          <div class="about-num">05</div>
+          <div class="about-h">Chi-Square Analysis</div>
+          <div class="about-p">statistical attack on LSB replacement. in natural images, pairs (2k,2k+1) differ. LSB encoding equalizes them — detectable.</div>
+        </div>
+        <div class="card">
+          <div class="about-num">06</div>
+          <div class="about-h">LSB Plane View</div>
+          <div class="about-p">amplify every pixel's LSB to 0 or 255. natural images show random noise. stego images reveal ordered structure.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">historical context</div>
+        <p class="info-text" style="margin-top:4px">
+          steganography predates digital computers. ancient greeks tattooed secrets on shaved scalps.
+          WWII used invisible ink, microdots hidden in newspapers, and null ciphers in ordinary letters.
+          today: digital watermarking protects copyright. journalists use stego for source protection.
+          nation-state actors embed C2 channels in image comment fields.
+          the goal has never changed — the best hidden message is one whose existence goes unsuspected.
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <span class="footer-text">ShadowPress · Steganography Lab · <span class="green">localhost:3000</span></span>
+  </footer>
+</div>
+
+<script src="/js/particles.js"></script>
+<script src="/js/stego.js"></script>
+<script src="/js/ui.js"></script>
+</body>
+</html>

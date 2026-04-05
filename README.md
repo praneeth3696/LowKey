@@ -1,152 +1,74 @@
-# LowKey
+# ShadowPress — Steganography Lab
 
-Hide in plain sight.
+All-in-one steganography toolkit with a dark hacker aesthetic.
 
-LowKey is a client-side steganography toolkit that embeds and extracts hidden data within images and text using low-level data manipulation techniques.
+## Features
 
-The focus is not just on hiding data, but on understanding how information can exist below the threshold of human perception.
+| Module | Technique | Encode | Decode |
+|--------|-----------|--------|--------|
+| Image LSB | Bit manipulation on RGB pixels | ✓ | ✓ |
+| Audio LSB | 16-bit WAV sample LSB | ✓ | ✓ |
+| Text Stego | Zero-width Unicode chars | ✓ | ✓ |
+| Metadata | PNG tEXt chunk injection | ✓ | ✓ |
+| Chi-Square | Statistical steganalysis | — | ✓ |
+| LSB Plane | Visual noise visualizer | — | ✓ |
 
----
+## Setup
 
-## Core Capabilities
+```bash
+# Install dependencies
+npm install
 
-### Image Steganography (LSB Manipulation)
+# Start server (production)
+npm start
 
-- Direct bit-level encoding using Least Significant Bit substitution
-- Operates on RGB channels via Canvas pixel buffers
-- Payload capacity derived from image resolution
-- Optional XOR-based obfuscation layer
-- Deterministic encoding and extraction
+# Start with auto-reload (development)
+npm run dev
+```
 
----
-
-### Text Steganography (Zero-Width Encoding)
-
-- Binary encoding using invisible Unicode characters
-- Zero-width space (U+200B) and non-joiner (U+200C) used as bit carriers
-- Byte Order Mark (U+FEFF) used as payload delimiter
-- Maintains visual integrity of cover text
-- Resistant to casual inspection
-
----
-
-### Decoding Engine
-
-- Unified extraction pipeline for both image and text payloads
-- Bitstream reconstruction from pixel data and Unicode sequences
-- Optional key-based deobfuscation
-- Graceful handling of invalid or missing payloads
-
----
-
-### Steganalysis Utilities
-
-- LSB plane visualization for structural inspection
-- Highlights statistical irregularities in pixel noise
-- Useful for both validation and detection workflows
-
----
-
-## System Design
-
-### Image Pipeline
-
-- Image loaded into Canvas context
-- Pixel buffer accessed as RGBA byte array
-- Least significant bits of RGB channels modified sequentially
-- Alpha channel preserved to avoid rendering artifacts
-- Message terminated using null-byte delimiter
-
-Capacity:
-(width × height × 3) / 8 bytes
-
----
-
-### Text Pipeline
-
-- Input message converted to binary stream
-- Bits mapped to zero-width Unicode characters
-- Payload injected into cover text with delimiters
-- Decoding reverses mapping and reconstructs original message
-
----
-
-## Execution Model
-
-- Fully client-side
-- No external dependencies
-- No data leaves the browser
-- Deterministic and reproducible results
-
----
-
-## Tech Stack
-
-- HTML5
-- CSS3
-- Vanilla JavaScript
-- Canvas API (pixel-level manipulation)
-- Unicode encoding techniques
-
----
+Server runs at: http://localhost:3000
 
 ## Project Structure
 
-LowKey/
-│
-├── index.html
-├── README.md
+```
+shadowpress/
+├── public/
+│   ├── index.html          # Single-page app shell
+│   ├── css/
+│   │   └── style.css       # All styles, dark/light theme
+│   └── js/
+│       ├── particles.js    # Particle canvas + click effects
+│       ├── stego.js        # Client-side stego logic (ZW, LSB plane)
+│       └── ui.js           # API calls, tab routing, dropzones
+├── server/
+│   ├── index.js            # Express entry point
+│   └── routes/
+│       ├── image.js        # Image LSB encode/decode/lsb-plane
+│       ├── audio.js        # Audio WAV LSB encode/decode
+│       ├── meta.js         # PNG tEXt chunk inject/extract/read
+│       └── analysis.js     # Chi-square steganalysis
+├── package.json
+└── README.md
+```
 
----
+## API Endpoints
 
-## Why This Project
+| Method | Path | Body | Response |
+|--------|------|------|----------|
+| POST | /api/image/encode | image, secret, key? | PNG blob |
+| POST | /api/image/decode | image, key? | JSON |
+| POST | /api/image/lsb-plane | image | PNG blob |
+| POST | /api/audio/encode | audio, secret | WAV blob |
+| POST | /api/audio/decode | audio | JSON |
+| POST | /api/meta/inject | image, secret, field? | PNG blob |
+| POST | /api/meta/read | image | JSON |
+| POST | /api/meta/extract | image | JSON |
+| POST | /api/analysis/chisquare | image | JSON |
 
-Most implementations treat steganography as a novelty.
+## Notes
 
-LowKey treats it as a systems problem:
-
-- Bit-level data control
-- Encoding/decoding symmetry
-- Capacity vs detectability trade-offs
-- Human perception vs machine representation
-
-This is not just about hiding data.
-It is about understanding where data can exist.
-
----
-
-## Limitations
-
-- XOR is not cryptographically secure
-- Susceptible to compression artifacts (especially JPEG)
-- No statistical obfuscation against advanced steganalysis
-
----
-
-## Future Work
-
-- AES-based encryption layer
-- Audio steganography (WAV LSB)
-- Adaptive embedding strategies
-- Statistical resistance techniques
-- Payload fragmentation and reconstruction
-
----
-
-## Disclaimer
-
-Intended for educational, research, and security exploration purposes.
-
----
-
-## Author
-
-Praneeth  
-Software Systems, PSG College of Technology
-
----
-
-## Closing Statement
-
-If a system cannot detect the presence of data,
-it cannot defend against it.
+- Image LSB: supports PNG, JPG, BMP, WebP. Output always PNG (lossless).
+- Audio LSB: 16-bit WAV only. MP3/AAC lossy compression destroys LSB data.
+- Passkey: applies XOR cipher before embedding. Both sides need the same key.
+- Chi-square: p-value < 0.05 = suspicious, < 0.01 = likely stego detected.
+- Metadata: PNG tEXt chunks survive most viewers but are stripped by some social media.
