@@ -1,74 +1,95 @@
-# ShadowPress — Steganography Lab
+# 🌌 ShadowPress [v1.0.0]
+### Advanced Steganographic Processing & Signal Intelligence Lab
 
-All-in-one steganography toolkit with a dark hacker aesthetic.
+```text
+      _                 _                 _                                 
+     | |               | |               | |                                
+  ___| |__   __ _  __| | _____      _ __ | |__   ___  ___ ___               
+ / __| '_ \ / _` |/ _` |/ _ \ \ /\ / / '_ \| '__/ _ \/ __/ __|              
+ \__ \ | | | (_| | (_| | (_) \ V  V /| |_) | | |  __/\__ \__ \              
+ |___/_| |_|\__,_|\__,_|\___/ \_/\_/ | .__/|_|  \___||___/___/              
+                                     | |                                    
+                                     |_|                                    
+```
 
-## Features
+ShadowPress is a comprehensive suite for carrier-signal manipulation and covert data exfiltration. It provides high-fidelity embedding, extraction, and statistical steganalysis tools designed for specialists in digital forensics and information security.
 
-| Module | Technique | Encode | Decode |
-|--------|-----------|--------|--------|
-| Image LSB | Bit manipulation on RGB pixels | ✓ | ✓ |
-| Audio LSB | 16-bit WAV sample LSB | ✓ | ✓ |
-| Text Stego | Zero-width Unicode chars | ✓ | ✓ |
-| Metadata | PNG tEXt chunk injection | ✓ | ✓ |
-| Chi-Square | Statistical steganalysis | — | ✓ |
-| LSB Plane | Visual noise visualizer | — | ✓ |
+---
 
-## Setup
+## 🛠 Technical Capabilities
+
+### 🖼 Spatial Domain Manipulation (Image LSB)
+- **Modality**: Pixel-level bitwise replacement in the RGBA space.
+- **Kernel**: 1-bit LSB injection with optional XOR cipher obfuscation.
+- **Support**: Lossless transforms across PNG, BMP, and WebP. Note: JPEG carriers are pre-converted to lossless buffers to prevent quantization-induced data loss.
+
+### 🔊 Temporal Signal Injection (Audio LSB)
+- **Modality**: Least Significant Bit replacement in 16-bit PCM WAV samples.
+- **Throughput**: ~1 byte per sample per channel segment.
+- **Constraints**: Signal integrity is maintained only in linear pulse-code modulation (LPCM). Lossy codecs (MP3/AAC) will cause catastrophic payload corruption.
+
+### 📝 Unicode Ghosting (Text Stego)
+- **Technique**: Zero-width character (`U+200B`, `U+200C`, `U+200D`, `U+FEFF`) mapping.
+- **Mechanism**: Binary sequence encoding into non-rendering Unicode points. Invisible to standard text renders, detectable only via hex-dump or regex auditing.
+
+### 🧬 Metadata Shadow-Ops
+- **Injection**: PNG `tEXt` chunk instantiation via raw buffer manipulation.
+- **Persistence**: Survived by most OS-level metadata parsers; prone to stripping by social media CDNs (Instagram/FB/X).
+
+---
+
+## 🔬 Steganalysis & Signal Integrity
+
+ShadowPress includes a dedicated analysis engine to detect LSB irregularities:
+
+### 📈 Chi-Square (χ²) Statistical Attack
+Evaluates the distribution of Frequency Pairs (PoVs).
+- **Theory**: $E = \frac{1}{2} (n_{2k} + n_{2k+1})$.
+- **Detection**: Quantifies the convergence of adjacent pixel value frequencies toward an artificial average—a hallmark of LSB replacement.
+- **Verdict Thresholds**:
+  - `p-value < 0.01`: High-confidence stego detection.
+  - `p-value > 0.10`: Consistent with natural image entropy.
+
+### 🌑 LSB Bit-Plane Rendering
+Visualizes the 0th bit-plane to expose patterns that break natural image gradients. This visualizer is crucial for identifying "salted" regions where encrypted payloads disrupt the noise floor.
+
+---
+
+## 🚀 Deployment Protocol
 
 ```bash
-# Install dependencies
-npm install
+# Clone the repository
+git clone https://github.com/praneeth3696/ShadowPress.git
 
-# Start server (production)
-npm start
+# Initialize environment
+cd ShadowPress
+npm install --silent
 
-# Start with auto-reload (development)
+# Spin up the listener
 npm run dev
 ```
 
-Server runs at: http://localhost:3000
+The node cluster will initialize at `0.0.0.0:3000`. Environment variables can be piped for custom port binding.
 
-## Project Structure
+---
 
-```
-shadowpress/
-├── public/
-│   ├── index.html          # Single-page app shell
-│   ├── css/
-│   │   └── style.css       # All styles, dark/light theme
-│   └── js/
-│       ├── particles.js    # Particle canvas + click effects
-│       ├── stego.js        # Client-side stego logic (ZW, LSB plane)
-│       └── ui.js           # API calls, tab routing, dropzones
-├── server/
-│   ├── index.js            # Express entry point
-│   └── routes/
-│       ├── image.js        # Image LSB encode/decode/lsb-plane
-│       ├── audio.js        # Audio WAV LSB encode/decode
-│       ├── meta.js         # PNG tEXt chunk inject/extract/read
-│       └── analysis.js     # Chi-square steganalysis
-├── package.json
-└── README.md
-```
+## 📡 API Schema [v1]
 
-## API Endpoints
+| Endpoint | Method | Payload Type | Description |
+|:---|:---|:---|:---|
+| `/api/image/encode` | `POST` | `multipart/form-data` | Embeds secret into spatial carrier. |
+| `/api/image/decode` | `POST` | `multipart/form-data` | Extracts bit-stream from spatial carrier. |
+| `/api/analysis/chisquare` | `POST` | `multipart/form-data` | Runs χ² PoV analysis on image buffer. |
+| `/api/audio/encode` | `POST` | `audio/wav` | Modulates WAV sample LSBs. |
 
-| Method | Path | Body | Response |
-|--------|------|------|----------|
-| POST | /api/image/encode | image, secret, key? | PNG blob |
-| POST | /api/image/decode | image, key? | JSON |
-| POST | /api/image/lsb-plane | image | PNG blob |
-| POST | /api/audio/encode | audio, secret | WAV blob |
-| POST | /api/audio/decode | audio | JSON |
-| POST | /api/meta/inject | image, secret, field? | PNG blob |
-| POST | /api/meta/read | image | JSON |
-| POST | /api/meta/extract | image | JSON |
-| POST | /api/analysis/chisquare | image | JSON |
+---
 
-## Notes
+## ⚠️ Operation Warnings
 
-- Image LSB: supports PNG, JPG, BMP, WebP. Output always PNG (lossless).
-- Audio LSB: 16-bit WAV only. MP3/AAC lossy compression destroys LSB data.
-- Passkey: applies XOR cipher before embedding. Both sides need the same key.
-- Chi-square: p-value < 0.05 = suspicious, < 0.01 = likely stego detected.
-- Metadata: PNG tEXt chunks survive most viewers but are stripped by some social media.
+1. **Payload Recovery**: All LSB operations are deterministic. If a `passkey` was used during encoding, the exact same key MUST be provided for XOR-reversion during decoding.
+2. **Lossy Compression**: Avoid JPG/MP3 carriers if you require 100% bit-integrity post-embedding.
+3. **Entropy**: Embedding large payloads into low-entropy carriers (e.g., solid color images) will result in trivial detection via Chi-Square analysis.
+
+---
+**Build Status**: `STABLE` | **Security Level**: `INFOCON 3`
+
